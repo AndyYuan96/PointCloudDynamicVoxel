@@ -23,9 +23,8 @@ def test():
     max_theta = 1.0
     min_phi = 0.0
     max_phi = 1.0
-    max_fv_voxel_nums = 1
 
-    voxelGenerator = PointCloudVoxel(max_points_per_voxel, feature_size_x, feature_size_y, feature_size_z, min_x, max_x, min_y, max_y, min_z, max_z, max_bev_voxel_nums, rows, cols,min_theta, max_theta, min_phi, max_phi,max_fv_voxel_nums)
+    voxelGenerator = PointCloudVoxel(max_points_per_voxel, feature_size_x, feature_size_y, feature_size_z, min_x, max_x, min_y, max_y, min_z, max_z, max_bev_voxel_nums, rows, cols,min_theta, max_theta, min_phi, max_phi)
 
     points = np.fromfile('pointcloud.bin',np.float32).reshape(-1,4)
     points = torch.from_numpy(points)
@@ -56,11 +55,12 @@ def test():
     max_point_nums = 100000
     max_voxel_nums = 50000
     bev_coordinate = torch.zeros((max_point_nums, 4), dtype=torch.float32)
+    bev_local_coordinate =  torch.zeros((max_point_nums, 3), dtype=torch.float32)
     intensity = torch.zeros((max_point_nums), dtype=torch.float32)
     bev_mapping_pv = torch.zeros((max_point_nums), dtype=torch.int32)
     bev_mapping_vf = torch.zeros((max_voxel_nums, 3), dtype=torch.int32)
     start = time.time()
-    voxelGenerator.dynamicVoxelBEV(points, bev_coordinate, intensity, bev_mapping_pv, bev_mapping_vf)
+    voxelGenerator.dynamicVoxelBEV(points, bev_coordinate, bev_local_coordinate, intensity, bev_mapping_pv, bev_mapping_vf)
     valid_point_nums = voxelGenerator.getValidPointNums()
     valid_voxel_nums = voxelGenerator.getValidBEVVoxelNums()
     bev_coordinate = bev_coordinate[:valid_point_nums]

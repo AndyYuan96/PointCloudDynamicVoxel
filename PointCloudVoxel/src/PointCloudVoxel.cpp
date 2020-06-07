@@ -13,8 +13,7 @@ public:
                       float min_x, float max_x, float min_y, float max_y, float min_z, float max_z,
                       int max_bev_voxel_nums,
                       int rows=1, int cols=1, 
-                      float min_theta=0, float max_theta=0, float min_phi=0, float max_phi=1,
-                      int max_fv_voxel_nums=1);
+                      float min_theta=0, float max_theta=0, float min_phi=0, float max_phi=1);
       int getValidPointNums() { return valid_point_nums_; }
       int getValidBEVVoxelNums() { return valid_bev_voxel_nums_; }
       int getValidFVVoxelNums() { return valid_fv_voxel_nums_; }
@@ -26,6 +25,7 @@ public:
 
       void dynamicVoxelBEV(torch::Tensor points_tensor,
                            torch::Tensor bev_coordinate_tensor,
+                           torch::Tensor bev_local_coordinate_tensor,
                            torch::Tensor intensity_tensor,
                            torch::Tensor bev_mapping_pv_tensor,
                            torch::Tensor bev_mapping_vf_tensor);
@@ -74,7 +74,6 @@ private:
 
       const int max_points_per_voxel_;
       const int max_bev_voxel_nums_;
-      const int max_fv_voxel_nums_;
 
       int valid_point_nums_;
       int valid_fv_voxel_nums_;
@@ -90,8 +89,7 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
                                 int max_bev_voxel_nums, 
 
                                 int rows, int cols, 
-                                float min_theta, float max_theta, float min_phi, float max_phi,
-                                int max_fv_voxel_nums):
+                                float min_theta, float max_theta, float min_phi, float max_phi):
                                 max_points_per_voxel_(max_points_per_voxel), voxel_feature_step_(4 * max_points_per_voxel),
                                 feature_size_x_(feature_size_x), feature_size_y_(feature_size_y), feature_size_z_(feature_size_z),
                                 // must - 0.01, because in below, even points[i][0] == max_x_, the code doesn't continue, then cause error
@@ -100,7 +98,6 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
 
                                 rows_(rows), cols_(cols), 
                                 min_theta_(min_theta), max_theta_(max_theta), min_phi_(min_phi), max_phi_(max_phi),
-                                max_fv_voxel_nums_(max_fv_voxel_nums),
                                 feature_size_xy_(feature_size_x_ * feature_size_y_),feature_size_xyz_(feature_size_xy_ * feature_size_z),
                                 voxel_x_step_((max_x_ + 0.01 - min_x_) / feature_size_x_), voxel_y_step_((max_y_ + 0.01 - min_y_) / feature_size_y_), voxel_z_step_((max_z_ + 0.01 - min_z_) / feature_size_z_),
                                 voxel_theta_step_((max_theta_ - min_theta_) / rows_), voxel_phi_step_((max_phi_ - min_phi_) / cols_)
@@ -189,12 +186,14 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
 
   void PointCloudVoxel::dynamicVoxelBEV(torch::Tensor points_tensor,
                           torch::Tensor bev_coordinate_tensor,
+                          torch::Tensor bev_local_coordinate_tensor,
                           torch::Tensor intensity_tensor,
                           torch::Tensor bev_mapping_pv_tensor,
                           torch::Tensor bev_mapping_vf_tensor)
   {
       auto points = points_tensor.accessor<float,2>();
       auto bev_coordinate = bev_coordinate_tensor.accessor<float,2>();
+      auto bev_local_coordinate = bev_local_coordinate_tensor.accessor<float,2>();
 
       auto intensity = intensity_tensor.accessor<float,1>();
       auto bev_mapping_pv = bev_mapping_pv_tensor.accessor<int,1>();
@@ -227,6 +226,10 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
           bev_coordinate[point_counts][2] = points[i][2];
 
           intensity[point_counts] = points[i][3];
+
+          bev_local_coordinate[point_counts][0] = points[i][0] - min_x_ - voxel_x_step_ * bev_x_index;
+          bev_local_coordinate[point_counts][1] = points[i][1] - min_y_ - voxel_y_step_ * bev_y_index;
+          bev_local_coordinate[point_counts][2] = points[i][2] - min_z_ - voxel_z_step_ * bev_z_index;
 
           int bev_voxel_index = bev_z_index * feature_size_xy_ +  bev_y_index * feature_size_x_ + bev_x_index;
 
@@ -435,7 +438,7 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
 //TORCH_EXTENSION_NAME 是在setup.py中你定义的那个名字
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   pybind11::class_<PointCloudVoxel>(m, "PointCloudVoxel")
-  .def(pybind11::init<int, int, int, int, float, float, float, float, float, float, int, int, int, float, float, float, float, int>())
+  .def(pybind11::init<int, int, int, int, float, float, float, float, float, float, int, int, int, float, float, float, float>())
   .def("getValidPointNums", &PointCloudVoxel::getValidPointNums)
   .def("getValidBEVVoxelNums", &PointCloudVoxel::getValidBEVVoxelNums)
   .def("getValidFVVoxelNums", &PointCloudVoxel::getValidFVVoxelNums)
