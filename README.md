@@ -10,7 +10,7 @@
 
 ​	I just implement dynamic voxel in the paper above according to my understand.
 
-​	The reimplementation of MVF will comming soon, gives an example of how to use the project.
+​	[MVF](https://github.com/AndyYuan96/End-to-End-Multi-View-Fusion-for-3D-Object-Detection-in-LiDAR-Point-Clouds) gives an example of how to use the project.
 
 
 
