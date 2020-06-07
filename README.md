@@ -15,7 +15,6 @@
 
 ## How to use?
 
-```
 The project contains two parts, PointCloudVoxel and scatter, and both of them are written as a pytorch extension.
 
 enviroment:
@@ -28,5 +27,4 @@ install:
 test:
 	cd PointCloudVoxel/test && python test.py
 	cd scatter/test && python test.py
-```
 
