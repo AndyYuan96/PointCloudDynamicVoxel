@@ -3,12 +3,21 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-__device__ __forceinline__ float atomicMaxFloat (float * addr, const float value) {
+__device__ __forceinline__ void atomicMaxFloat (float * addr, float value) {
   float old;
-  old = (value >= 0) ? __int_as_float(atomicMax((int *)addr, __float_as_int(value))) :
-       __uint_as_float(atomicMin((unsigned int *)addr, __float_as_uint(value)));
-
-  return old;
+  if(value == 0)
+  {
+    value = 0.0;
+    __int_as_float(atomicMax((int *)addr, __float_as_int(value)));
+  }
+  else if(value > 0)
+  {
+    __int_as_float(atomicMax((int *)addr, __float_as_int(value)));
+  }
+  else
+  {
+    __uint_as_float(atomicMin((unsigned int *)addr, __float_as_uint(value)));
+  }       
 }
 
 __global__ void scatter_max_cuda_kernel(
