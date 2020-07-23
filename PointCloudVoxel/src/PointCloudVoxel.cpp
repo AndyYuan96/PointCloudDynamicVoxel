@@ -31,6 +31,7 @@ public:
                            torch::Tensor bev_mapping_vf_tensor);
       
       void dynamicVoxelBEVFaster(torch::Tensor points_tensor,
+                                 torch::Tensor local_coordinate_tensor,
                                  torch::Tensor bev_mapping_pv_tensor,
                                  torch::Tensor bev_mapping_vf_tensor);
       
@@ -257,11 +258,12 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
   }
 
   void PointCloudVoxel::dynamicVoxelBEVFaster(torch::Tensor points_tensor,
+                                              torch::Tensor local_coordinate_tensor,
                                               torch::Tensor bev_mapping_pv_tensor,
                                               torch::Tensor bev_mapping_vf_tensor)
   {
       auto points = points_tensor.accessor<float,2>();
-
+      auto local_coordinate = local_coordinate_tensor.accessor<float,2>();
       auto bev_mapping_pv = bev_mapping_pv_tensor.accessor<int,1>();
       auto bev_mapping_vf = bev_mapping_vf_tensor.accessor<int,2>();
 
@@ -278,6 +280,10 @@ PointCloudVoxel::PointCloudVoxel(int max_points_per_voxel,
           int bev_x_index = (points[i][0] - min_x_) / voxel_x_step_;
           int bev_y_index = (points[i][1] - min_y_) / voxel_y_step_;
           int bev_z_index = (points[i][2] - min_z_) / voxel_z_step_;
+          // relative to grid center
+          local_coordinate[i][0] = points[i][0] - min_x_ - bev_x_index * voxel_x_step_ - voxel_x_step_  * 0.5;
+          local_coordinate[i][1] = points[i][1] - min_y_ - bev_y_index * voxel_y_step_ - voxel_y_step_  * 0.5;
+          local_coordinate[i][2] = points[i][2] - min_z_ - bev_z_index * voxel_z_step_ - voxel_z_step_  * 0.5;
 
           int bev_voxel_index = bev_z_index * feature_size_xy_ +  bev_y_index * feature_size_x_ + bev_x_index;
 
