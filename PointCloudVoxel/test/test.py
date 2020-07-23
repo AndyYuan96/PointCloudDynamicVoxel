@@ -83,11 +83,13 @@ def test():
     mask_z = (points[:,2] >= min_z) + (points[:,2] < (max_z - 0.01)) == 2
     total_mask = (mask_x + mask_y + mask_z) == 3
     masked_points = points[total_mask]
+    masked_points_local = torch.zeros_like(masked_points)
+
     print("point shape after masking : ", masked_points.shape)
     bev_mapping_pv_masked = torch.zeros((masked_points.shape[0]),dtype=torch.int32)
     bev_mapping_vf_masked = torch.zeros((max_voxel_nums, 3), dtype=torch.int32)
     start = time.time()
-    voxelGenerator.dynamicVoxelBEVFaster(masked_points, bev_mapping_pv_masked, bev_mapping_vf_masked)
+    voxelGenerator.dynamicVoxelBEVFaster(masked_points, masked_points_local, bev_mapping_pv_masked, bev_mapping_vf_masked)
     bev_mapping_vf_masked = bev_mapping_vf_masked[:voxelGenerator.getValidBEVVoxelNums(),:]
     print("dynamicVoxelBEVFaster consuming: ", time.time() - start)
 
